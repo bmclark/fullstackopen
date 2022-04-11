@@ -1,26 +1,21 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import axios from 'axios'
 import Numbers from './components/Numbers'
 
 const App = () => {
-  const [persons, setPersons] = useState([
-    { name: 'Arto Hellas', number: '040-123456', id: 1 },
-    { name: 'Ada Lovelace', number: '39-44-5323523', id: 2 },
-    { name: 'Dan Abramov', number: '12-43-234345', id: 3 },
-    { name: 'Mary Poppendieck', number: '39-23-6423122', id: 4 }
-  ])
-  // const [searchResults, setSearchResults] = useState(persons)
+  const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [search, setSearch] = useState('')
+  
+  const searchResults = !search 
+    ? persons
+    : persons.filter(person => person.name.toLowerCase().includes(search.toLowerCase()))
 
   const handleNameChange = (event) => setNewName(event.target.value)
   const handleNumberChange = (event) => setNewNumber(event.target.value)
   const handleSearchChange = (event) => setSearch(event.target.value)
-
-  const searchResults = !search 
-    ? persons
-    : persons.filter(person => person.name.toLowerCase().includes(search.toLowerCase()))
-  
+ 
   const handleButtonClick = (event) => {
     event.preventDefault()
     const names = persons.map(person => person.name)
@@ -44,6 +39,14 @@ const App = () => {
     setNewNumber('')
     setSearch('')
   }
+
+  useEffect(() => {
+    axios
+      .get('http://127.0.0.1:3001/persons')
+      .then(response => {
+        setPersons(response.data)
+      })
+  }, [])
 
   return (
     <div>
