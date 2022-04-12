@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-// import Numbers from './components/Numbers'
+import Notification from './components/Notification'
 import Search from './components/Search'
 import AddPerson from './components/AddPerson'
 import Person from './components/Person'
@@ -11,6 +11,17 @@ const App = () => {
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [search, setSearch] = useState('')
+  const [message, setMessage] = useState(null)
+
+  const displayMessage = (newMessage, error = false) => {
+    setMessage({
+      text: newMessage,
+      error
+    })
+    setTimeout(() => {
+      setMessage(null)
+    }, 5000)
+  }
   
   const searchResults = !search 
     ? persons
@@ -19,19 +30,7 @@ const App = () => {
   const handleNameChange = (event) => setNewName(event.target.value)
   const handleNumberChange = (event) => setNewNumber(event.target.value)
   const handleSearchChange = (event) => setSearch(event.target.value)
- 
-  // const handleButtonClick = (event) => {
-  //   event.preventDefault()
-  //   const names = persons.map(person => person.name)
-  //   const numbers = persons.map(person => person.number)
-  //   if (names.includes(newName)) { 
-  //     alert(`${newName} is already added to phonebook`)
-  //   } else if (numbers.includes(newNumber)) {
-  //     alert(`${newNumber} is already added to phonebook`)
-  //   } else {
-  //     addPerson()
-  //   }
-  // }
+
 
   const handleButtonClick = (event) => {
     event.preventDefault()
@@ -50,7 +49,11 @@ const App = () => {
       const updateName = window.confirm(`${newName} exists, update?`)
         if (updateName) { 
           personService.update(person.id, newPerson)
-          refresh()
+          .then(displayMessage(`${newName} has been updated`))
+          .then(()=>refresh())
+          .catch(error =>{
+            displayMessage(`ERROR`, error)
+          })
         }
     } else {
         // check if number is repeated {
@@ -60,11 +63,18 @@ const App = () => {
           const person = persons.find(person => person.number === newNumber)
           const updateNumber = window.confirm(`${newNumber} exists, update?`)
           if (updateNumber) { 
-            personService.update(person.id, newPerson)
-            refresh()
+            personService
+            .update(person.id, newPerson)
+            .then(displayMessage(`${newNumber} has been updated`))
+            .then(() => refresh())
+            .catch(error =>{
+              displayMessage(`ERROR`, error)
+            })
           }
         } else { // name/number not repeated
           addPerson({...newPerson, id: person.length + 1})
+          displayMessage(`${newName} has been added`)
+
       }
     }
   }
@@ -86,6 +96,13 @@ const App = () => {
       personService
         .deletePerson(props.id)
         .then(() => refresh())
+        .catch(error =>{
+          displayMessage(`ERROR: ${props.name} has already been removed!`, error)
+        }
+          
+          )
+
+      displayMessage(`${props.name} has been deleted`)
 
       // personService.getAll().then(response => setPersons(response.data))
     }
@@ -101,6 +118,9 @@ const App = () => {
         setNewNumber('')
         setSearch('')
       })
+      .catch(error =>{
+        displayMessage(`ERROR`, error)
+      })
   }
 
   useEffect(() => {
@@ -109,11 +129,15 @@ const App = () => {
       .then(response => {
         setPersons(response.data)
       })
+      .catch(error =>{
+        displayMessage(`ERROR`, error)
+      })
   }, [])
 
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={message} />
       <Search search={search} handleSearchChange={handleSearchChange} />
       <AddPerson 
         newName={newName}
